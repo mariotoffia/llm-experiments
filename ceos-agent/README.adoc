@@ -1,0 +1,25 @@
+# CEOS Agent
+
+This is a simple test to integrate with _Crossbreed Energy OS_ to onboard a new _HVAC_ equipment that will use a district heating optimizer service (Crossbreed Smarter Heating).
+
+## Installation
+
+First make sure to setup a virtual environment with the required dependencies (see below).
+
+.Install Dependencies
+[source,bash]
+----
+conda create --name chainlit python=3.10
+conda activate chainlit
+pip install -r requirements.txt
+----
+
+Then, you can run the agent with the following command:
+
+.Run Agent
+[source,bash]
+----
+chainlit run app.py -w
+----
+
+Where the _w_ flag is to run the agent in _watch_ mode, which means that the agent will restart automatically when the code changes.

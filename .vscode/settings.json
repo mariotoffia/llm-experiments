@@ -1,0 +1,16 @@
+{
+  "asciidoc.antora.enableAntoraSupport": true,
+  "cSpell.words": [
+    "CEOS",
+    "chainlit"
+  ],
+  "grammarly.files.include": [
+    "**/README.md",
+    "**/readme.md",
+    "**/*.txt"
+  ],
+  "grammarly.files.exclude": [
+    "**/requirements.txt",
+  ],
+
+}

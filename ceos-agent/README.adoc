@@ -33,6 +33,8 @@ Install libmagic for _unstructured_ to better predict the contents of a file as 
 brew install libmagic
 brew install libxml2
 brew install libxslt
+# brew install poppler # Unsure if needed?
+# brew install tesseract # Unsure if needed?
 ----
 
 .Debian/Ubuntu

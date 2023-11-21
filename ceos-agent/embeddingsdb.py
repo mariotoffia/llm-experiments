@@ -2,7 +2,7 @@ import os
 import shutil
 import json
 from typing import List
-from retriever import StructuredData
+from scanner import StructuredData
 from langchain.vectorstores.chroma import Chroma
 from langchain.schema.embeddings import Embeddings
 
@@ -27,6 +27,9 @@ class EmbeddingsDb:
 
         self.embeddings = embeddings
 
+    def get_embeddings(self) -> Embeddings:
+        return self.embeddings
+    
     def as_retriever(self):
         """
         Return the Chroma object as a retriever

@@ -1,8 +1,12 @@
 {
   "asciidoc.antora.enableAntoraSupport": true,
   "cSpell.words": [
+    "acall",
+    "astream",
     "CEOS",
     "chainlit",
+    "dotenv",
+    "embeddingsdb",
     "langchain",
     "libmagic",
     "metadatas",

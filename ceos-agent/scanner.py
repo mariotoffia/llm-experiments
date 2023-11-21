@@ -28,7 +28,7 @@ def find_files(pattern) -> List[str]:
     return result
 
 
-def retrieve_directory(pattern: str) -> List[List[StructuredData]]:  # NOSONAR
+def scan_directory(pattern: str) -> List[List[StructuredData]]:  # NOSONAR
     """
     Retrieve structured data from a directory
     :param pattern: Pattern to match e.g. 'data/*.txt'
@@ -38,12 +38,12 @@ def retrieve_directory(pattern: str) -> List[List[StructuredData]]:  # NOSONAR
     result: List[List[StructuredData]] = []
 
     for file_path in find_files(pattern):
-        result.append(retrieve_file(file_path))
+        result.append(get_file_data(file_path))
 
     return result
 
 
-def retrieve_file(file_path: str) -> List[StructuredData]:  # NOSONAR
+def get_file_data(file_path: str) -> List[StructuredData]:  # NOSONAR
     """
     Retrieve structured data from a file
     :param file_path: Path to the file

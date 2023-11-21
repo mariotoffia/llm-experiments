@@ -1,30 +1,165 @@
 import os
-
-from emb import EmbeddingsDb
-from retriever import retrieve_directory
+from system_index import system_index, user_index
+from embeddingsdb import EmbeddingsDb
+from dotenv import load_dotenv
+from langchain.pydantic_v1 import BaseModel
 from langchain.embeddings import OpenAIEmbeddings
+from langchain.chains import RetrievalQAWithSourcesChain
+from langchain.chat_models import ChatOpenAI
+from langchain.schema.output_parser import StrOutputParser
+from langchain.schema.runnable import Runnable, RunnableParallel, RunnablePassthrough, RunnableConfig
+from langchain.prompts.chat import (
+    ChatPromptTemplate,
+    SystemMessagePromptTemplate,
+    HumanMessagePromptTemplate,
+)
 
-## Initialize Chroma
+import chainlit as cl
+from chainlit.input_widget import Select, Switch, Slider
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Initialize System
+user_file_path = os.path.join(os.path.dirname(__file__), "data", "user")
+
+if not os.path.exists(user_file_path):
+    os.makedirs(user_file_path)
+
+# LLM
+model = ChatOpenAI(model_name="gpt-3.5-turbo", streaming=True, temperature=0)
+
+# Embeddings
 embeddings = OpenAIEmbeddings(openai_api_key=os.environ["OPENAI_API_KEY"])
+embeddings_db = EmbeddingsDb(embeddings=embeddings)
 
-embDb = EmbeddingsDb(embeddings=embeddings)
-# d = embDb.embed(text="hello world") # NOSONAR
-# print(d)
+system_index(embeddings=embeddings_db)
 
-def retrieve(pattern: str):
-  training = retrieve_directory(pattern)
+# Prompt
+template = """Answer the question based only on the following context:
+{context}
 
-  for text in training:
-    if len(text) == 0:
-      continue
+Question: {question}
+"""
 
-    stored = embDb.store_structured_data(data=text, id=text[0].File)
+prompt = ChatPromptTemplate.from_template(template)
 
-    if stored:
-      print(f'\n*** STORED: {text[0].File} ***')
-    else:
-      print(f'\n*** SKIPPED: {text[0].File} ***')
+## TODO: QnA Chain
+# Create a chain that uses the Chroma vector store for RAG
+# chain = RetrievalQAWithSourcesChain.from_chain_type(
+#     ChatOpenAI(temperature=0, streaming=True),
+#     chain_type="stuff",
+#     retriever=embeddings_db.as_retriever(),
+# )
 
-# Index training and knowledge (if needed) - delete data/embeddings if you want to reindex
-retrieve(pattern="data/training/*.md")
-retrieve(pattern="data/knowledge/*.md")
+# Add typing for input
+class Question(BaseModel):
+    __root__: str
+
+
+@cl.on_chat_start
+async def on_chat_start():
+    ettings = await cl.ChatSettings(
+        [
+            Select(
+                id="Model",
+                label="OpenAI - Model",
+                values=["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k"],
+                initial_index=0,
+            ),
+            Switch(id="Streaming", label="OpenAI - Stream Tokens", initial=True),
+            Slider(
+                id="Temperature",
+                label="OpenAI - Temperature",
+                initial=0,
+                min=0,
+                max=2,
+                step=0.1,
+            ),
+        ]
+    ).send()
+
+    # Set the chain into the user session
+    chain = (
+        {"context": embeddings_db.as_retriever(), "question": RunnablePassthrough()}
+        | prompt
+        | model
+        | StrOutputParser()
+    )
+
+    chain = chain.with_types(input_type=Question)
+
+    cl.user_session.set("chain", chain)
+
+    # Sending an image...
+    elements = [
+        cl.Image(
+            name="CEOS",
+            display="inline",            
+            url="https://www.crossbreed.se/wp-content/uploads/2021/06/energyos-top-text-mobile-webb.jpg",
+        ),
+    ]
+
+    await cl.Message(content="",elements=elements).send()
+    await cl.Message(content="Welcome to Crossbreed Energy OS. Please ask me a question!").send()
+
+    # files = None
+ 
+    # Wait for the user to upload a file
+    # while files == None:
+    #     files = await cl.AskFileMessage(
+    #         content="Please upload a text file if you need som additional to discuss around!",
+    #         accept=["text/plain"],
+    #         max_size_mb=20,
+    #         timeout=180,
+    #     ).send()
+
+    # file = files[0]
+
+    # msg = cl.Message(content=f"Processing `{file.name}`...")
+    # await msg.send()
+
+    # # Decode the file
+    # text = file.content.decode("utf-8")
+
+    # # Write the file to user directory
+    # with open(os.path.join(user_file_path, file.name), "w") as f:
+    #     f.write(text)
+
+    # user_index(embeddings=embeddings_db)
+  
+    # # Let the user know that the system is ready
+    # msg.content = f"Processing `{file.name}` done!"
+
+    # await msg.update()    
+
+
+@cl.on_message
+async def on_message(message: cl.Message):    
+    runnable = cl.user_session.get("chain")  # type: Runnable
+
+    if runnable is None:
+        msg = cl.Message(content="runnable is None!")
+        await msg.send()
+        return
+
+    # clear message
+    msg = cl.Message(content="")
+    await msg.send()
+
+    async for chunk in runnable.astream(
+        message.content,
+        config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
+    ):
+        await msg.stream_token(chunk)
+
+    await msg.update()
+
+# embedding = embeddings_db.embed(text="hello world") # NOSONAR
+# print(embedding)
+
+# https://medium.com/@onkarmishra/using-langchain-for-question-answering-on-own-data-3af0a82789ed
+# https://github.com/sudarshan-koirala/langchain-openai-chainlit/blob/main/txt_qa.py
+# https://github.com/langchain-ai/langchain/tree/master/templates
+# https://unstructured-io.github.io/unstructured/core/embedding.html
+# https://github.com/langchain-ai/langchain/blob/master/templates/rag-conversation/rag_conversation/chain.py

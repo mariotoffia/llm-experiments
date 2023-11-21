@@ -4,12 +4,18 @@ from langchain.document_loaders import UnstructuredFileLoader
 from unstructured.cleaners.core import clean_extra_whitespace
 from langchain.document_loaders import UnstructuredURLLoader
 
-class StructuredData(BaseModel):
+class StructuredData(BaseModel):    
     Question: str
     Answer: str
     Metadata: object
 
 def retrieve_file(file_path: str) -> List[StructuredData]: # NOSONAR
+    """
+    Retrieve structured data from a file
+    :param file_path: Path to the file
+    :return: List of StructuredData objects
+    """
+
     loader = UnstructuredFileLoader(
         file_path=file_path,
         strategy="hi-res",  # other option:"fast"

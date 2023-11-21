@@ -9,7 +9,7 @@ First make sure to setup a virtual environment with the required dependencies (s
 .Install Dependencies
 [source,bash]
 ----
-conda create --name chainlit python=3.10
+conda create --name chainlit python=3.11
 conda activate chainlit
 pip install -r requirements.txt
 ----
@@ -23,3 +23,16 @@ chainlit run app.py -w
 ----
 
 Where the _w_ flag is to run the agent in _watch_ mode, which means that the agent will restart automatically when the code changes.
+
+## Uninstall
+
+If you need to completely remove virtual environment, you can run the following commands.
+
+.Remove Virtual Environment
+[source,bash]
+----
+conda deactivate
+conda env remove --name chainlit
+----
+
+This will completely remove everything from your local system.

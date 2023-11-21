@@ -8,7 +8,37 @@ class StructuredData(BaseModel):
     Question: str
     Answer: str
     Metadata: object
+    File: str
 
+def find_files(pattern) -> List[str]:
+    """
+    Find files matching a pattern
+    :param pattern: Pattern to match e.g. 'data/*.txt'
+    :return: List of file paths
+    """
+    import glob
+    
+    result: List[str] = []
+    
+    for file_path in glob.glob(pattern):
+        result.append(file_path)
+
+    return result
+
+def retrieve_directory(pattern: str) -> List[List[StructuredData]]: # NOSONAR
+    """
+    Retrieve structured data from a directory
+    :param pattern: Pattern to match e.g. 'data/*.txt'
+    :return: List of StructuredData objects
+    """
+
+    result: List[List[StructuredData]] = []
+
+    for file_path in find_files(pattern):
+        result.append(retrieve_file(file_path))
+
+    return result
+    
 def retrieve_file(file_path: str) -> List[StructuredData]: # NOSONAR
     """
     Retrieve structured data from a file
@@ -39,6 +69,7 @@ def retrieve_file(file_path: str) -> List[StructuredData]: # NOSONAR
                 Question=None,
                 Answer=content.strip(),
                 Metadata=doc.metadata,
+                File=file_path,
             ))
 
             continue
@@ -49,6 +80,7 @@ def retrieve_file(file_path: str) -> List[StructuredData]: # NOSONAR
                     Question=current_question.strip(),
                     Answer= "\n".join(current_answer).strip(),
                     Metadata=doc.metadata,
+                    File=file_path,
                 ))
                 current_answer = []
 
@@ -65,6 +97,7 @@ def retrieve_file(file_path: str) -> List[StructuredData]: # NOSONAR
             Question=current_question.strip(),
             Answer= "\n".join(current_answer).strip(),
             Metadata=doc.metadata,
+            File=file_path,
         ))
 
     return result

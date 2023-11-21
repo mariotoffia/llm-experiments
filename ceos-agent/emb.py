@@ -34,10 +34,18 @@ class EmbeddingsDb:
         """
         return self.chroma.as_retriever()
     
+    def embed(self, text: str) -> List[float]:
+        """
+        Embed a text
+        :param text: Text to embed
+        :return: List of floats
+        """
+        return self.embeddings.embed_query(text)
+    
     def reset(self):
         """
         Reset the vector store by delete all files and recreating the directory
-        where the embeddings are stored.        
+        where the embeddings are stored.
         :return:
         """
         if not os.path.exists(self.embeddings_path):        

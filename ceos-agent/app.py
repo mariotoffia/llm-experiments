@@ -1,30 +1,34 @@
 import os
 
 from emb import EmbeddingsDb
-from retriever import retrieve_file
+from retriever import retrieve_directory
 from langchain.embeddings import OpenAIEmbeddings
 
 ## Initialize Chroma
 embeddings = OpenAIEmbeddings(openai_api_key=os.environ["OPENAI_API_KEY"])
-# query_result = embeddings.embed_query("hello world")
-# print(query_result)
 
 embDb = EmbeddingsDb(embeddings=embeddings)
+# d = embDb.embed(text="hello world")
+# print(d)
 
-# https://medium.com/@onkarmishra/using-langchain-for-question-answering-on-own-data-3af0a82789ed
+all = retrieve_directory("data/training/*.md")
 
-data = retrieve_file("data/training/smarter-heating.md")
+for text in all:
+  if len(text) == 0:
+    continue
 
-for d in data:
-    print(d.Question)
-    print("_" * 80)
-    print(d.Answer)
-    print("_" * 80)
-    print(d.Metadata)
-    print("_" * 80)
-    print()
+  stored = embDb.store_structured_data(data=text, id=text[0].File)
 
-stored = embDb.store_structured_data(data=data, id="smarter-heating.md")
+  if stored:
+    print(f'\n*** STORED: {text[0].File} ***')
+  else:
+    print(f'\n*** SKIPPED: {text[0].File} ***')
 
-if stored:
-    print("\n*** STORED ***")
+# for d in data:
+#     print(d.Question)
+#     print("_" * 80)
+#     print(d.Answer)
+#     print("_" * 80)
+#     print(d.Metadata)
+#     print("_" * 80)
+#     print()

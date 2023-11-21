@@ -2,7 +2,11 @@
   "asciidoc.antora.enableAntoraSupport": true,
   "cSpell.words": [
     "CEOS",
-    "chainlit"
+    "chainlit",
+    "langchain",
+    "libmagic",
+    "sentencepiece",
+    "setuptools"
   ],
   "grammarly.files.include": [
     "**/README.md",
@@ -10,7 +14,7 @@
     "**/*.txt"
   ],
   "grammarly.files.exclude": [
-    "**/requirements.txt",
+    "**/requirements*.txt",
   ],
 
 }

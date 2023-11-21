@@ -4,13 +4,68 @@ This is a simple test to integrate with _Crossbreed Energy OS_ to onboard a new 
 
 ## Installation
 
+[quote, Unstructured]
+This is a bit complicated since I use _unstructured_ and it is a bit cumbersome to install due to it's vast dependency tree. The upside, it seems to be a better way of splitting data for vector stores.
+
 First make sure to setup a virtual environment with the required dependencies (see below).
 
-.Install Dependencies
+.Create Virtual Environment
 [source,bash]
 ----
 conda create --name chainlit python=3.11
 conda activate chainlit
+----
+
+Ensure you have the latest _setuptools_ as well as pip installed.
+
+.Upgrade Setup Tools
+[source,bash]
+----
+pip install --upgrade setuptools
+python -m pip install --upgrade pip
+----
+
+Install libmagic for _unstructured_ to better predict the contents of a file as well as parse some file formats.
+
+.MacOS
+[source,bash]
+----
+brew install libmagic
+brew install libxml2
+brew install libxslt
+----
+
+.Debian/Ubuntu
+[source,bash]
+----
+sudo apt-get install -y libmagic-dev
+----
+
+.Windows
+[source,bash]
+----
+conda install -c conda-forge libmagic
+----
+
+Lastly make sure the rust compiler is installed footnote::[If you need to use some of the _unstructured_ tokenizers (that uses the sentencepiece library).]
+
+.Install Rust (MacOS)
+[source,bash]
+----
+brew install rust
+----
+
+.Install Rust (Generic)
+[source,bash]
+----
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+----
+
+Now, install all the _requirements_.
+
+.Install Requirements
+[source,bash]
+----
 pip install -r requirements.txt
 ----
 

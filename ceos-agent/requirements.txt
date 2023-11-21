@@ -1,2 +1,4 @@
 chainlit
 openai
+langchain
+unstructured[all-docs]

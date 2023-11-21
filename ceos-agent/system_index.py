@@ -7,7 +7,7 @@ def index_files(pattern: str, embeddings: EmbeddingsDb):
   for text in training:
     if len(text) == 0:
       continue
-
+    
     stored = embeddings.store_structured_data(data=text, id=text[0].File)
 
     if stored:
@@ -35,4 +35,4 @@ def user_index(embeddings: EmbeddingsDb):
   :return: None
   """
 
-  index_files(pattern="data/user/*.txt", embeddings=embeddings)  
+  index_files(pattern="data/user/*.*", embeddings=embeddings)  

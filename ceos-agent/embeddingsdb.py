@@ -6,6 +6,13 @@ from scanner import StructuredData
 from langchain.vectorstores.chroma import Chroma
 from langchain.schema.embeddings import Embeddings
 
+def transform_dict_arrays_to_strings(input_dict):
+    for key, value in input_dict.items():
+        # Check if the value is a list
+        if isinstance(value, list):
+            # Join the list elements into a comma-separated string
+            input_dict[key] = ', '.join(map(str, value))
+    return input_dict
 
 class EmbeddingsDb:
     """
@@ -89,10 +96,8 @@ class EmbeddingsDb:
                 # Enclosing both Question and Answer in triple quotes
                 formatted_text = f'Question: """{res.Question}"""\nAnswer: """{res.Answer}"""'
                 texts.append(formatted_text)
-
-            if "languages" in res.Metadata and isinstance(res.Metadata["languages"], list):
-                res.Metadata["languages"] = ", ".join(
-                    res.Metadata["languages"])
+                
+            res.Metadata = transform_dict_arrays_to_strings(res.Metadata)
 
             metadata.append(res.Metadata)
 

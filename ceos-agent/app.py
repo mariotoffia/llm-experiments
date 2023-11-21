@@ -26,7 +26,9 @@ if not os.path.exists(user_file_path):
 embeddings = OpenAIEmbeddings(openai_api_key=os.environ["OPENAI_API_KEY"])
 embeddings_db = EmbeddingsDb(embeddings=embeddings)
 
+# Make sure index is up to date
 system_index(embeddings=embeddings_db)
+user_index(embeddings=embeddings_db)
 
 # Prompt
 template = """Answer the question based only on the following context:
@@ -56,7 +58,7 @@ def setup_chain(model: str, temperature: float, streaming: bool) -> any:
         streaming=streaming,
         temperature=temperature,
     )
-    
+
     chain = (
         {"context": embeddings_db.as_retriever(), "question": RunnablePassthrough()}
         | prompt
@@ -65,6 +67,23 @@ def setup_chain(model: str, temperature: float, streaming: bool) -> any:
     )
 
     return chain.with_types(input_type=Question)
+
+
+def is_binary_file(file_name):
+    # Common binary file extensions
+    binary_extensions = {
+        '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff',
+        '.pdf', '.zip', '.rar',
+        '.7z', '.mp3', '.wav', '.wma', '.mp4', '.mov',
+        '.avi', '.flv', '.mkv'
+    }
+
+    # Get the file extension
+    extension = file_name.lower().rsplit('.', 1)[-1]
+    extension = '.' + extension
+
+    # Check if the extension is in the list of binary extensions
+    return extension in binary_extensions
 
 
 @cl.on_chat_start
@@ -114,49 +133,36 @@ async def on_chat_start():
         author=ceos_user,
     ).send()
 
-    # files = None
-
-    # Wait for the user to upload a file
-    # while files == None:
-    #     files = await cl.AskFileMessage(
-    #         content="Please upload a text file if you need som additional to discuss around!",
-    #         accept=["text/plain"],
-    #         max_size_mb=20,
-    #         timeout=180,
-    #     ).send()
-
-    # file = files[0]
-
-    # msg = cl.Message(content=f"Processing `{file.name}`...")
-    # await msg.send()
-
-    # # Decode the file
-    # text = file.content.decode("utf-8")
-
-    # # Write the file to user directory
-    # with open(os.path.join(user_file_path, file.name), "w") as f:
-    #     f.write(text)
-
-    # user_index(embeddings=embeddings_db)
-
-    # # Let the user know that the system is ready
-    # msg.content = f"Processing `{file.name}` done!"
-
-    # await msg.update()
-
 
 @cl.on_settings_update
 async def setup_agent(settings):
-  chain = setup_chain(
-      model=settings["Model"], 
-      temperature=settings["Temperature"], 
-      streaming=settings["Streaming"],
-  )
+    chain = setup_chain(
+        model=settings["Model"],
+        temperature=settings["Temperature"],
+        streaming=settings["Streaming"],
+    )
 
-  cl.user_session.set("chain", chain.with_types(input_type=Question))
+    cl.user_session.set("chain", chain.with_types(input_type=Question))
+
 
 @cl.on_message
 async def on_message(message: cl.Message):
+    for element in message.elements:
+        if isinstance(element, cl.File):
+            file = element
+
+            if is_binary_file(file.name):
+                with open(os.path.join(user_file_path, file.name), "wb") as f:
+                    f.write(file.content)
+            else:
+                with open(os.path.join(user_file_path, file.name), "w") as f:
+                    f.write(file.content.decode("utf-8"))
+
+            user_index(embeddings=embeddings_db)
+
+            await cl.Message(content=f"Processing `{file.name}` done!").send()
+            return
+
     runnable = cl.user_session.get("chain")  # type: Runnable
 
     if runnable is None:
@@ -175,9 +181,6 @@ async def on_message(message: cl.Message):
         await msg.stream_token(chunk)
 
     await msg.update()
-
-# embedding = embeddings_db.embed(text="hello world") # NOSONAR
-# print(embedding)
 
 # https://medium.com/@onkarmishra/using-langchain-for-question-answering-on-own-data-3af0a82789ed
 # https://github.com/sudarshan-koirala/langchain-openai-chainlit/blob/main/txt_qa.py

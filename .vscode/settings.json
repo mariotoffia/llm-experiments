@@ -6,7 +6,8 @@
     "langchain",
     "libmagic",
     "sentencepiece",
-    "setuptools"
+    "setuptools",
+    "Wideco"
   ],
   "grammarly.files.include": [
     "**/README.md",

@@ -5,8 +5,13 @@
     "chainlit",
     "langchain",
     "libmagic",
+    "metadatas",
+    "NOSONAR",
+    "OPENAI",
+    "pydantic",
     "sentencepiece",
     "setuptools",
+    "vectorstores",
     "Wideco"
   ],
   "grammarly.files.include": [

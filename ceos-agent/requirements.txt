@@ -1,4 +1,5 @@
 chainlit
 openai
 langchain
+chromadb
 unstructured[all-docs]

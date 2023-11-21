@@ -4,11 +4,13 @@ from langchain.document_loaders import UnstructuredFileLoader
 from unstructured.cleaners.core import clean_extra_whitespace
 from langchain.document_loaders import UnstructuredURLLoader
 
-class StructuredData(BaseModel):    
+
+class StructuredData(BaseModel):
     Question: str
     Answer: str
     Metadata: object
     File: str
+
 
 def find_files(pattern) -> List[str]:
     """
@@ -17,15 +19,16 @@ def find_files(pattern) -> List[str]:
     :return: List of file paths
     """
     import glob
-    
+
     result: List[str] = []
-    
+
     for file_path in glob.glob(pattern):
         result.append(file_path)
 
     return result
 
-def retrieve_directory(pattern: str) -> List[List[StructuredData]]: # NOSONAR
+
+def retrieve_directory(pattern: str) -> List[List[StructuredData]]:  # NOSONAR
     """
     Retrieve structured data from a directory
     :param pattern: Pattern to match e.g. 'data/*.txt'
@@ -38,8 +41,9 @@ def retrieve_directory(pattern: str) -> List[List[StructuredData]]: # NOSONAR
         result.append(retrieve_file(file_path))
 
     return result
-    
-def retrieve_file(file_path: str) -> List[StructuredData]: # NOSONAR
+
+
+def retrieve_file(file_path: str) -> List[StructuredData]:  # NOSONAR
     """
     Retrieve structured data from a file
     :param file_path: Path to the file
@@ -78,7 +82,7 @@ def retrieve_file(file_path: str) -> List[StructuredData]: # NOSONAR
             if current_question is not None:
                 result.append(StructuredData(
                     Question=current_question.strip(),
-                    Answer= "\n".join(current_answer).strip(),
+                    Answer="\n".join(current_answer).strip(),
                     Metadata=doc.metadata,
                     File=file_path,
                 ))
@@ -95,7 +99,7 @@ def retrieve_file(file_path: str) -> List[StructuredData]: # NOSONAR
     if current_question is not None:
         result.append(StructuredData(
             Question=current_question.strip(),
-            Answer= "\n".join(current_answer).strip(),
+            Answer="\n".join(current_answer).strip(),
             Metadata=doc.metadata,
             File=file_path,
         ))

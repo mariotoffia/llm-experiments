@@ -93,3 +93,15 @@ conda env remove --name chainlit
 ----
 
 This will completely remove everything from your local system.
+
+## Re-Index
+
+It will just index a single file once under data/knowledge or data/training. If you want to re-index all the files, you can run the following command
+
+.Re-Index
+[source,bash]
+----
+rm -rf data/embeddings
+----
+
+If you just want to re-index a certain file, navigate down to `data/embeddings/index/...` and remove the file that you want to re-index.

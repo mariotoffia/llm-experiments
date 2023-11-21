@@ -33,7 +33,7 @@ class EmbeddingsDb:
         :return: Chroma object
         """
         return self.chroma.as_retriever()
-    
+
     def embed(self, text: str) -> List[float]:
         """
         Embed a text
@@ -41,14 +41,14 @@ class EmbeddingsDb:
         :return: List of floats
         """
         return self.embeddings.embed_query(text)
-    
+
     def reset(self):
         """
         Reset the vector store by delete all files and recreating the directory
         where the embeddings are stored.
         :return:
         """
-        if not os.path.exists(self.embeddings_path):        
+        if not os.path.exists(self.embeddings_path):
             return
 
         for item in os.listdir(self.embeddings_path):
@@ -58,7 +58,7 @@ class EmbeddingsDb:
                 os.remove(item_path)
             elif os.path.isdir(item_path):
                 shutil.rmtree(item_path)
-    
+
     def store_structured_data(self, data: List[StructuredData], id: str = None) -> bool:
         """
         Store structured data in the vector store
@@ -70,11 +70,14 @@ class EmbeddingsDb:
         texts = []
         metadata = []
 
-        id_path = os.path.join(self.embeddings_path,"indexed", id)
+        if not os.path.exists(self.embeddings_path):
+            os.makedirs(self.embeddings_path)
+
+        id_path = os.path.join(self.embeddings_path, "indexed", id)
 
         if id is not None and os.path.exists(id_path):
             return False
-        
+
         for res in data:
             if res.Question is None:
                 # Enclosing Answer in triple quotes
@@ -85,8 +88,9 @@ class EmbeddingsDb:
                 texts.append(formatted_text)
 
             if "languages" in res.Metadata and isinstance(res.Metadata["languages"], list):
-                res.Metadata["languages"] = ", ".join(res.Metadata["languages"])
-                        
+                res.Metadata["languages"] = ", ".join(
+                    res.Metadata["languages"])
+
             metadata.append(res.Metadata)
 
         self.chroma.from_texts(
@@ -94,7 +98,7 @@ class EmbeddingsDb:
             metadatas=metadata,
             persist_directory=self.embeddings_path,
             embedding=self.embeddings,
-        )        
+        )
 
         # Mark id as already done
         if id is not None:

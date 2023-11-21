@@ -27,3 +27,8 @@ You need to provide with the following information:
 
 * The sensor ID, for example: "S14".
 * The Tenant ID, for example "myAccount".
+
+## How do I install the indoor climate sensors?
+It is important that you install the indoor sensors in the right place. The sensors should be placed in the middle of the room, at a height of 1.5 meters. The sensors should not be placed in direct sunlight or near heat sources such as radiators or lamps. Do not place any sensors near windows or doors.
+
+Place one sensor at the north wall and one at the south wall to be able to measure the temperature difference between the two sensors.

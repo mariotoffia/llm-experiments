@@ -27,6 +27,9 @@ class EmbeddingsDb:
         Constructor
         :param embeddings: The embeddings creator to use.
         """
+        if not os.path.exists(self.embeddings_path):
+            os.makedirs(self.embeddings_path)
+            
         self.chroma = Chroma(
             embedding_function=embeddings,
             persist_directory=self.embeddings_path,
@@ -90,8 +93,8 @@ class EmbeddingsDb:
 
         for res in data:
             if res.Question is None:
-                # Enclosing Answer in triple quotes
-                texts.append(f'Answer: """{res.Answer}"""')
+                # Not QA data, just store the text
+                texts.append(res.Answer)
             else:
                 # Enclosing both Question and Answer in triple quotes
                 formatted_text = f'Question: """{res.Question}"""\nAnswer: """{res.Answer}"""'

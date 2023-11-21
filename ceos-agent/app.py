@@ -6,7 +6,7 @@ from langchain.pydantic_v1 import BaseModel
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.chat_models import ChatOpenAI
 from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import Runnable, RunnableParallel, RunnablePassthrough, RunnableConfig
+from langchain.schema.runnable import Runnable, RunnablePassthrough, RunnableConfig
 from langchain.prompts.chat import ChatPromptTemplate
 
 import chainlit as cl
@@ -53,6 +53,8 @@ def setup_chain(model: str, temperature: float, streaming: bool) -> any:
     :param streaming: The streaming flag
     :return: The chain
     """
+    print(f'model:{model}, temp:{temperature}, streaming:{streaming}')
+
     chat_model = ChatOpenAI(
         model_name=model,
         streaming=streaming,
@@ -89,7 +91,7 @@ def is_binary_file(file_name):
 @cl.on_chat_start
 async def on_chat_start():
     # Set the chain into the user session
-    chain = setup_chain(model="gpt-4", temperature=0.0, streaming=True)
+    chain = setup_chain(model="gpt-4-1106-preview", temperature=0.0, streaming=True)
     cl.user_session.set("chain", chain.with_types(input_type=Question))
 
     await cl.ChatSettings(
@@ -98,8 +100,8 @@ async def on_chat_start():
                 id="Model",
                 label="OpenAI - Model",
                 values=["gpt-3.5-turbo", "gpt-3.5-turbo-16k",
-                        "gpt-4", "gpt-4-32k"],
-                initial_index=2,
+                        "gpt-4", "gpt-4-1106-preview"],
+                initial_index=3,
             ),
             Switch(id="Streaming", label="OpenAI - Stream Tokens", initial=True),
             Slider(
@@ -129,7 +131,7 @@ async def on_chat_start():
 
     await cl.Message(content="", author=ceos_user, elements=elements).send()
     await cl.Message(
-        content="Welcome to Crossbreed Energy OS. Please ask me a question!",
+        content="Hi I'm here to help 😊 Please ask me any question about CEOS!",
         author=ceos_user,
     ).send()
 

@@ -41,8 +41,9 @@ user_index(embeddings=embeddings_db)
 # Prompt
 prompt = ChatPromptTemplate.from_template("""{context}
 
+                                          
 -----------
-Answer the question below based only on the above context.
+Answer the question below based only on the above context without mention the context.
 
 Question: {question}
 """)
@@ -60,7 +61,11 @@ def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
 
 
-def setup_chain(model: str, temperature: float, streaming: bool) -> any:
+def setup_chain(
+        model: str, 
+        temperature: float, 
+        streaming: bool,
+        max_tokens=4096) -> any:
     """
     Setup the LLM model and the chain.
 
@@ -69,12 +74,13 @@ def setup_chain(model: str, temperature: float, streaming: bool) -> any:
     :param streaming: The streaming flag
     :return: The chain
     """
-    print(f'model:{model}, temp:{temperature}, streaming:{streaming}')
+    print(f'model:{model}, temp:{temperature}, streaming:{streaming}, max_tokens:{max_tokens}')
 
     chat_model = ChatOpenAI(
         model_name=model,
         streaming=streaming,
         temperature=temperature,
+        max_tokens=max_tokens,
     )
 
     chain = (
@@ -132,6 +138,14 @@ async def on_chat_start():
                 max=2,
                 step=0.1,
             ),
+            Slider(
+                id="MaxTokens",
+                label="Max Tokens",
+                initial=4096,
+                min=1024,
+                max=128*1024,
+                step=512,
+            ),
         ]
     ).send()
 
@@ -162,6 +176,7 @@ async def setup_agent(settings):
         model=settings["Model"],
         temperature=settings["Temperature"],
         streaming=settings["Streaming"],
+        max_tokens=settings["MaxTokens"],
     ))
 
 

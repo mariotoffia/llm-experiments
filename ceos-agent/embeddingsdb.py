@@ -24,8 +24,14 @@ class EmbeddingsDb:
     chroma: Chroma
     embeddings_path: str = "./data/embeddings"
     embeddings: Embeddings
+    search_type: str
+    k: int
 
-    def __init__(self, embeddings: Embeddings):
+    def __init__(self,
+                 embeddings: Embeddings,
+                 search_type="similarity",
+                 k=4,
+                 ):
         """
         Constructor
         :param embeddings: The embeddings creator to use.
@@ -39,6 +45,8 @@ class EmbeddingsDb:
         )
 
         self.embeddings = embeddings
+        self.search_type = search_type
+        self.k = k
 
     def get_embeddings(self) -> Embeddings:
         return self.embeddings
@@ -48,7 +56,10 @@ class EmbeddingsDb:
         Return the Chroma object as a retriever
         :return: Chroma object
         """
-        return self.chroma.as_retriever()
+        return self.chroma.as_retriever(
+            search_type=self.search_type,
+            search_kwargs={"k": self.k},
+        )
 
     def embed(self, text: str) -> List[float]:
         """

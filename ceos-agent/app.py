@@ -8,12 +8,19 @@ from langchain.chat_models import ChatOpenAI
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import Runnable, RunnablePassthrough, RunnableConfig
 from langchain.prompts.chat import ChatPromptTemplate
-
+from langchain.globals import set_verbose, set_debug
 import chainlit as cl
 from chainlit.input_widget import Select, Switch, Slider
 
 # Load environment variables from .env file
 load_dotenv()
+
+# Set debug level
+debug = True
+
+set_verbose(debug)
+set_debug(debug)
+
 
 # Initialize System
 ceos_user = "mario.toffia@crossbreed.se"
@@ -23,25 +30,34 @@ if not os.path.exists(user_file_path):
     os.makedirs(user_file_path)
 
 # Embeddings
-embeddings = OpenAIEmbeddings(openai_api_key=os.environ["OPENAI_API_KEY"])
-embeddings_db = EmbeddingsDb(embeddings=embeddings)
+embeddings_db = EmbeddingsDb(
+    embeddings=OpenAIEmbeddings(openai_api_key=os.environ["OPENAI_API_KEY"]),
+)
 
 # Make sure index is up to date
 system_index(embeddings=embeddings_db)
 user_index(embeddings=embeddings_db)
 
 # Prompt
-template = """Answer the question based only on the following context:
-{context}
+prompt = ChatPromptTemplate.from_template("""{context}
+
+-----------
+Answer the question below based only on the above context.
 
 Question: {question}
-"""
-
-prompt = ChatPromptTemplate.from_template(template)
+""")
 
 
 class Question(BaseModel):
     __root__: str
+
+
+def format_docs(docs):
+    """
+    Format the documents into a string. otherwise the output would
+    be a list of [Document(page_content=...),...]
+    """
+    return "\n\n".join(doc.page_content for doc in docs)
 
 
 def setup_chain(model: str, temperature: float, streaming: bool) -> any:
@@ -62,7 +78,10 @@ def setup_chain(model: str, temperature: float, streaming: bool) -> any:
     )
 
     chain = (
-        {"context": embeddings_db.as_retriever(), "question": RunnablePassthrough()}
+        {
+            "context": embeddings_db.as_retriever() | format_docs,
+            "question": RunnablePassthrough()
+        }
         | prompt
         | chat_model
         | StrOutputParser()
@@ -91,8 +110,9 @@ def is_binary_file(file_name):
 @cl.on_chat_start
 async def on_chat_start():
     # Set the chain into the user session
-    chain = setup_chain(model="gpt-4-1106-preview", temperature=0.0, streaming=True)
-    cl.user_session.set("chain", chain.with_types(input_type=Question))
+    cl.user_session.set("chain", setup_chain(model="gpt-4-1106-preview",
+                        temperature=0.0, streaming=True),
+                        )
 
     await cl.ChatSettings(
         [
@@ -138,13 +158,11 @@ async def on_chat_start():
 
 @cl.on_settings_update
 async def setup_agent(settings):
-    chain = setup_chain(
+    cl.user_session.set("chain", setup_chain(
         model=settings["Model"],
         temperature=settings["Temperature"],
         streaming=settings["Streaming"],
-    )
-
-    cl.user_session.set("chain", chain.with_types(input_type=Question))
+    ))
 
 
 @cl.on_message
@@ -176,6 +194,7 @@ async def on_message(message: cl.Message):
     msg = cl.Message(content="", author=ceos_user)
     await msg.send()
 
+    # print out the type of runnable
     async for chunk in runnable.astream(
         message.content,
         config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
@@ -183,9 +202,3 @@ async def on_message(message: cl.Message):
         await msg.stream_token(chunk)
 
     await msg.update()
-
-# https://medium.com/@onkarmishra/using-langchain-for-question-answering-on-own-data-3af0a82789ed
-# https://github.com/sudarshan-koirala/langchain-openai-chainlit/blob/main/txt_qa.py
-# https://github.com/langchain-ai/langchain/tree/master/templates
-# https://unstructured-io.github.io/unstructured/core/embedding.html
-# https://github.com/langchain-ai/langchain/blob/master/templates/rag-conversation/rag_conversation/chain.py

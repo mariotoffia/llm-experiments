@@ -5,6 +5,7 @@
     "astream",
     "CEOS",
     "chainlit",
+    "datapoints",
     "dotenv",
     "embeddingsdb",
     "langchain",

@@ -2,9 +2,11 @@ import os
 import shutil
 import json
 from typing import List
+import uuid
 from scanner import StructuredData
 from langchain.vectorstores.chroma import Chroma
 from langchain.schema.embeddings import Embeddings
+
 
 def transform_dict_arrays_to_strings(input_dict):
     for key, value in input_dict.items():
@@ -13,6 +15,7 @@ def transform_dict_arrays_to_strings(input_dict):
             # Join the list elements into a comma-separated string
             input_dict[key] = ', '.join(map(str, value))
     return input_dict
+
 
 class EmbeddingsDb:
     """
@@ -29,7 +32,7 @@ class EmbeddingsDb:
         """
         if not os.path.exists(self.embeddings_path):
             os.makedirs(self.embeddings_path)
-            
+
         self.chroma = Chroma(
             embedding_function=embeddings,
             persist_directory=self.embeddings_path,
@@ -39,7 +42,7 @@ class EmbeddingsDb:
 
     def get_embeddings(self) -> Embeddings:
         return self.embeddings
-    
+
     def as_retriever(self):
         """
         Return the Chroma object as a retriever
@@ -72,6 +75,25 @@ class EmbeddingsDb:
             elif os.path.isdir(item_path):
                 shutil.rmtree(item_path)
 
+    def query_text(self, text: str) -> List[StructuredData]:
+        """
+        Query the vector store for the given text
+        :param text: Text to query
+        :return: List of StructuredData objects
+        """
+        result = self.chroma.as_retriever().get_relevant_documents(query=text)
+
+        seen_ids = set()
+        text = ""
+
+        for res in result:
+            if str(uuid.uuid5(uuid.NAMESPACE_DNS, res.page_content)) not in seen_ids:
+                text += res.page_content + "\n"
+                seen_ids.add(
+                    str(uuid.uuid5(uuid.NAMESPACE_DNS, res.page_content)))
+
+        return text
+
     def store_structured_data(self, data: List[StructuredData], id: str = None) -> bool:
         """
         Store structured data in the vector store
@@ -99,7 +121,7 @@ class EmbeddingsDb:
                 # Enclosing both Question and Answer in triple quotes
                 formatted_text = f'Question: """{res.Question}"""\nAnswer: """{res.Answer}"""'
                 texts.append(formatted_text)
-                
+
             res.Metadata = transform_dict_arrays_to_strings(res.Metadata)
 
             metadata.append(res.Metadata)

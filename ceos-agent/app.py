@@ -6,8 +6,8 @@ from langchain.schema.runnable import Runnable, RunnableConfig
 from langchain.globals import set_verbose, set_debug
 
 from chat_start import get_chat_settings, get_avatar, get_initial_messages
-from setup_chain import setup_chain
-from system_index import system_index, user_index
+from chain import setup_chain
+from index import system_index, user_index
 from embeddingsdb import EmbeddingsDb
 
 # Load environment variables from .env file
@@ -19,8 +19,9 @@ debug = True
 set_verbose(debug)
 set_debug(debug)
 
-
 # Initialize System
+use_history = True
+max_tokens = 4096
 ceos_user = "mario.toffia@crossbreed.se"
 user_file_path = os.path.join(os.path.dirname(__file__), "data", "user")
 
@@ -61,6 +62,8 @@ async def on_chat_start():
         temperature=0.0,
         streaming=True,
         embeddings_db=embeddings_db,
+        use_history=use_history,
+        max_tokens=max_tokens,
     ))
 
     await get_chat_settings().send()
@@ -78,6 +81,7 @@ async def setup_agent(settings):
         streaming=settings["Streaming"],
         embeddings_db=embeddings_db,
         max_tokens=settings["MaxTokens"],
+        use_history=use_history,
     ))
 
 
@@ -99,9 +103,9 @@ async def on_message(message: cl.Message):
             await cl.Message(content=f"Processing `{file.name}` done!").send()
             return
 
-    runnable = cl.user_session.get("chain")  # type: Runnable
+    chain = cl.user_session.get("chain")  # type: Runnable
 
-    if runnable is None:
+    if chain is None:
         msg = cl.Message(content="runnable is None!")
         await msg.send()
         return
@@ -111,8 +115,9 @@ async def on_message(message: cl.Message):
     await msg.send()
 
     # print out the type of runnable
-    async for chunk in runnable.astream(
-        message.content,
+    async for chunk in chain.astream(
+        input=message.content,
+        chat_history=[], # Used when history is enabled
         config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
     ):
         await msg.stream_token(chunk)

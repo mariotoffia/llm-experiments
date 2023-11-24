@@ -1,6 +1,6 @@
 [project]
 # Whether to enable telemetry (default: true). No personal data is collected.
-enable_telemetry = false
+enable_telemetry = true
 
 # List of environment variables to be provided by each user to use the app.
 user_env = []
@@ -29,7 +29,7 @@ multi_modal = true
 
 [UI]
 # Name of the app and chatbot.
-name = "Chatbot"
+name = "Crossbreed Energy OS"
 
 # Show the readme while the conversation is empty.
 show_readme_as_default = true
@@ -47,7 +47,7 @@ default_expand_messages = false
 hide_cot = false
 
 # Link to your github repo. This will add a github button in the UI's header.
-# github = ""
+# github = "github.com/crossbreedab"
 
 # Specify a CSS file that can be used to customize the user interface.
 # The CSS file can be served from the public directory or via an external link.

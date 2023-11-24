@@ -191,3 +191,19 @@ def transform_dict_arrays_to_strings(input_dict):
             # Join the list elements into a comma-separated string
             input_dict[key] = ', '.join(map(str, value))
     return input_dict
+
+def is_binary_file(file_name):
+    # Common binary file extensions
+    binary_extensions = {
+        '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff',
+        '.pdf', '.zip', '.rar',
+        '.7z', '.mp3', '.wav', '.wma', '.mp4', '.mov',
+        '.avi', '.flv', '.mkv'
+    }
+
+    # Get the file extension
+    extension = file_name.lower().rsplit('.', 1)[-1]
+    extension = '.' + extension
+
+    # Check if the extension is in the list of binary extensions
+    return extension in binary_extensions

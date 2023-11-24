@@ -6,6 +6,7 @@
     "CEOS",
     "chainlit",
     "chromadb",
+    "crossbreedab",
     "datapoints",
     "docstore",
     "dotenv",

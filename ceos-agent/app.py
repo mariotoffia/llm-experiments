@@ -7,7 +7,7 @@ from langchain.globals import set_verbose, set_debug
 
 from chat_start import get_chat_settings, get_avatar, get_initial_messages
 from chain import setup_chain
-from index import system_index, user_index
+from index import system_index, user_index, add_file_to_user_index
 from embeddingsdb import EmbeddingsDb
 
 # Load environment variables from .env file
@@ -38,23 +38,6 @@ system_index(embeddings=embeddings_db)
 user_index(embeddings=embeddings_db)
 
 
-def is_binary_file(file_name):
-    # Common binary file extensions
-    binary_extensions = {
-        '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff',
-        '.pdf', '.zip', '.rar',
-        '.7z', '.mp3', '.wav', '.wma', '.mp4', '.mov',
-        '.avi', '.flv', '.mkv'
-    }
-
-    # Get the file extension
-    extension = file_name.lower().rsplit('.', 1)[-1]
-    extension = '.' + extension
-
-    # Check if the extension is in the list of binary extensions
-    return extension in binary_extensions
-
-
 @cl.on_chat_start
 async def on_chat_start():
     chain = setup_chain(
@@ -77,7 +60,7 @@ async def on_chat_start():
 
 
 @cl.on_settings_update
-async def setup_agent(settings):
+async def setup_agent(settings):    
     cl.user_session.set("chain", setup_chain(
         model=settings["Model"],
         temperature=settings["Temperature"],
@@ -94,16 +77,9 @@ async def on_message(message: cl.Message):
         if isinstance(element, cl.File):
             file = element
 
-            if is_binary_file(file.name):
-                with open(os.path.join(user_file_path, file.name), "wb") as f:
-                    f.write(file.content)
-            else:
-                with open(os.path.join(user_file_path, file.name), "w") as f:
-                    f.write(file.content.decode("utf-8"))
-
-            user_index(embeddings=embeddings_db)
-
-            await cl.Message(content=f"Processing `{file.name}` done!").send()
+            await cl.Message(content=f"Processing `{file.name}`...").send()            
+            add_file_to_user_index(file.name, embeddings_db, file.content)
+            await cl.Message(content=f"...done!").send()
             return
 
     chain = cl.user_session.get("chain")  # type: Runnable

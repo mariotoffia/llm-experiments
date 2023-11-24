@@ -14,7 +14,7 @@ from embeddingsdb import EmbeddingsDb
 load_dotenv()
 
 # Set debug level
-debug = True
+debug = False
 
 set_verbose(debug)
 set_debug(debug)
@@ -57,14 +57,17 @@ def is_binary_file(file_name):
 
 @cl.on_chat_start
 async def on_chat_start():
-    cl.user_session.set("chain", setup_chain(
+    chain = setup_chain(
         model="gpt-4-1106-preview",
         temperature=0.0,
         streaming=True,
         embeddings_db=embeddings_db,
         use_history=use_history,
         max_tokens=max_tokens,
-    ))
+    )
+
+    cl.user_session.set("chain", chain)
+    cl.user_session.set("chat_history", [])
 
     await get_chat_settings().send()
     await get_avatar(ceos_user).send()
@@ -114,12 +117,18 @@ async def on_message(message: cl.Message):
     msg = cl.Message(content="", author=ceos_user)
     await msg.send()
 
-    # print out the type of runnable
+    chat_history = cl.user_session.get("chat_history")  # type: list
+
     async for chunk in chain.astream(
-        input=message.content,
-        chat_history=[], # Used when history is enabled
+        input={
+            "question": message.content,
+            "chat_history": chat_history,  # Used when history is enabled
+        },
         config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
     ):
         await msg.stream_token(chunk)
 
+    # append to chat history
+    chat_history += [(message.content, msg.content)]
+    
     await msg.update()

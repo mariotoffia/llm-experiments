@@ -16,9 +16,11 @@
     "metadatas",
     "NOSONAR",
     "OPENAI",
+    "pmean",
     "pydantic",
     "sentencepiece",
     "setuptools",
+    "SMHI",
     "tiktoken",
     "vectorstores",
     "Wideco"

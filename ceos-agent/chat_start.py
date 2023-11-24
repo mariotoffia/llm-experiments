@@ -3,7 +3,7 @@ import chainlit as cl
 from chainlit.input_widget import Select, Switch, Slider
 
 
-def get_chat_settings() -> cl.ChatSettings: 
+def get_chat_settings(use_history=False) -> cl.ChatSettings: 
   """
   gets the chat setting.
   :returns: cl.ChatSettings
@@ -18,6 +18,7 @@ def get_chat_settings() -> cl.ChatSettings:
                 initial_index=3,
             ),
             Switch(id="Streaming", label="OpenAI - Stream Tokens", initial=True),
+            Switch(id="UseHistory", label="Use History", initial=use_history),
             Slider(
                 id="Temperature",
                 label="OpenAI - Temperature",

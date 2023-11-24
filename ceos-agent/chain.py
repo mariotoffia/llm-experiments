@@ -33,10 +33,6 @@ Question: {question}
 """)
 
 
-class Question(BaseModel):
-    __root__: str
-
-
 def format_docs(docs):
     """
     Format the documents into a string. otherwise the output would
@@ -104,7 +100,7 @@ def setup_chain(
     else:
         chain = (
             {
-                "context": embeddings_db.as_retriever() | format_docs,
+                "context": itemgetter("question") | embeddings_db.as_retriever() | format_docs,
                 "question": RunnablePassthrough()
             }
             | answer_prompt
@@ -113,4 +109,7 @@ def setup_chain(
         )
 
         return chain
-    # return chain.with_types(input_type=Question)
+
+# class Question(BaseModel):
+#     __root__: str
+# return chain.with_types(input_type=Question)

@@ -14,13 +14,13 @@ from embeddingsdb import EmbeddingsDb
 load_dotenv()
 
 # Set debug level
-debug = False
+debug = True
 
 set_verbose(debug)
 set_debug(debug)
 
 # Initialize System
-use_history = True
+use_history = False
 max_tokens = 4096
 ceos_user = "mario.toffia@crossbreed.se"
 user_file_path = os.path.join(os.path.dirname(__file__), "data", "user")
@@ -69,7 +69,7 @@ async def on_chat_start():
     cl.user_session.set("chain", chain)
     cl.user_session.set("chat_history", [])
 
-    await get_chat_settings().send()
+    await get_chat_settings(use_history=use_history).send()
     await get_avatar(ceos_user).send()
 
     for message in get_initial_messages(ceos_user):
@@ -84,7 +84,7 @@ async def setup_agent(settings):
         streaming=settings["Streaming"],
         embeddings_db=embeddings_db,
         max_tokens=settings["MaxTokens"],
-        use_history=use_history,
+        use_history=settings["UseHistory"],
     ))
 
 
@@ -130,5 +130,5 @@ async def on_message(message: cl.Message):
 
     # append to chat history
     chat_history += [(message.content, msg.content)]
-    
+
     await msg.update()

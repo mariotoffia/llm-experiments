@@ -7,13 +7,14 @@ def index_files(pattern: str, embeddings: EmbeddingsDb):
   for text in training:
     if len(text) == 0:
       continue
-    
-    stored = embeddings.store_structured_data(data=text, id=text[0].File)
+
+    file = text[0].metadata["file"]
+    stored = embeddings.store_structured_data(docs=text, id=file)
 
     if stored:
-      print(f'\n*** STORED: {text[0].File} ***')
+      print(f'\n*** STORED: {file} ***')
     else:
-      print(f'\n*** SKIPPED: {text[0].File} ***')
+      print(f'\n*** SKIPPED: {file} ***')
 
 def system_index(embeddings: EmbeddingsDb):
   """
@@ -23,7 +24,6 @@ def system_index(embeddings: EmbeddingsDb):
   :param embeddings: The embeddings database to use.
   :return: None
   """
-
   index_files(pattern="data/training/*.md", embeddings=embeddings)
   index_files(pattern="data/knowledge/*.md", embeddings=embeddings)
 
@@ -34,5 +34,4 @@ def user_index(embeddings: EmbeddingsDb):
   :param embeddings: The embeddings database to use.
   :return: None
   """
-
   index_files(pattern="data/user/*.*", embeddings=embeddings)  

@@ -3,19 +3,9 @@ import shutil
 import json
 from typing import List
 import uuid
-from scanner import StructuredData
+from langchain.docstore.document import Document
 from langchain.vectorstores.chroma import Chroma
 from langchain.schema.embeddings import Embeddings
-
-
-def transform_dict_arrays_to_strings(input_dict):
-    for key, value in input_dict.items():
-        # Check if the value is a list
-        if isinstance(value, list):
-            # Join the list elements into a comma-separated string
-            input_dict[key] = ', '.join(map(str, value))
-    return input_dict
-
 
 class EmbeddingsDb:
     """
@@ -86,36 +76,34 @@ class EmbeddingsDb:
             elif os.path.isdir(item_path):
                 shutil.rmtree(item_path)
 
-    def query_text(self, text: str) -> List[StructuredData]:
+    def query_text(self, text: str) -> List[Document]:
         """
         Query the vector store for the given text
         :param text: Text to query
-        :return: List of StructuredData objects
+        :return: List of Document objects
         """
-        result = self.chroma.as_retriever().get_relevant_documents(query=text)
+        docs = self.chroma.as_retriever().get_relevant_documents(query=text)
 
         seen_ids = set()
-        text = ""
+        result: List[Document] = []
 
-        for res in result:
-            if str(uuid.uuid5(uuid.NAMESPACE_DNS, res.page_content)) not in seen_ids:
-                text += res.page_content + "\n"
+        for doc in docs:
+            if str(uuid.uuid5(uuid.NAMESPACE_DNS, doc.page_content)) not in seen_ids:
+                result.append(doc)
+
                 seen_ids.add(
-                    str(uuid.uuid5(uuid.NAMESPACE_DNS, res.page_content)))
+                    str(uuid.uuid5(uuid.NAMESPACE_DNS, doc.page_content)))
 
-        return text
+        return result
 
-    def store_structured_data(self, data: List[StructuredData], id: str = None) -> bool:
+    def store_structured_data(self, docs: List[Document], id: str = None) -> bool:
         """
         Store structured data in the vector store
-        :param data:    List of StructuredData objects
+        :param docs:    List of Document objects
         :param id:      Optional id, of which it checks if already indexed and skips
                         if such is the case. 
         :return:        True if the data was stored, False if the data was skipped
         """
-        texts = []
-        metadata = []
-
         if not os.path.exists(self.embeddings_path):
             os.makedirs(self.embeddings_path)
 
@@ -124,22 +112,8 @@ class EmbeddingsDb:
         if id is not None and os.path.exists(id_path):
             return False
 
-        for res in data:
-            if res.Question is None:
-                # Not QA data, just store the text
-                texts.append(res.Answer)
-            else:
-                # Enclosing both Question and Answer in triple quotes
-                formatted_text = f'Question: """{res.Question}"""\nAnswer: """{res.Answer}"""'
-                texts.append(formatted_text)
-
-            res.Metadata = transform_dict_arrays_to_strings(res.Metadata)
-
-            metadata.append(res.Metadata)
-
-        self.chroma.from_texts(
-            texts=texts,
-            metadatas=metadata,
+        self.chroma.from_documents(
+            documents=docs,            
             persist_directory=self.embeddings_path,
             embedding=self.embeddings,
         )

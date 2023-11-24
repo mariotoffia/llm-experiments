@@ -38,6 +38,15 @@ You need to provide with the following information:
 * The sensor ID, for example: "S14".
 * The Tenant ID, for example "myAccount".
 
+## Indoor Sensors from Wideco
+What do I need to provide in order to configure CEOS to get indoor data from Wideco Sensors?
+
+You need to provide with the following information:
+* The Account ID, for example: "myAccount".
+* The Sensor ID, for example: "153933".
+* If it is a indoor temperature sensor or a indoor humidity sensor.
+* By default the sensor is assumed to be a temperature sensor.
+
 ## Installation and Positioning of Indoor Climate Sensors
 How do I install the indoor climate sensors?
 

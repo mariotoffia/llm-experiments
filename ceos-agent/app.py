@@ -79,13 +79,14 @@ async def on_message(message: cl.Message):
 
             await cl.Message(content=f"Processing `{file.name}`...").send()            
             add_file_to_user_index(file.name, embeddings_db, file.content)
-            await cl.Message(content=f"...done!").send()
+            await cl.Message(content="...done!").send()
             return
 
+    # Get the current chain
     chain = cl.user_session.get("chain")  # type: Runnable
 
     if chain is None:
-        msg = cl.Message(content="runnable is None!")
+        msg = cl.Message(content="chain is None!")
         await msg.send()
         return
 

@@ -3,10 +3,9 @@ from dotenv import load_dotenv
 import chainlit as cl
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.schema.runnable import Runnable, RunnableConfig
-from langchain.globals import set_verbose, set_debug
 
 from chat_start import get_chat_settings, get_avatar, get_initial_messages
-from chain import setup_chain
+from chain import setup_chain_from_chat_settings
 from index import system_index, user_index, add_file_to_user_index
 from embeddingsdb import EmbeddingsDb
 
@@ -16,12 +15,8 @@ load_dotenv()
 # Set debug level
 debug = True
 
-set_verbose(debug)
-set_debug(debug)
 
 # Initialize System
-use_history = False
-max_tokens = 4096
 ceos_user = "mario.toffia@crossbreed.se"
 user_file_path = os.path.join(os.path.dirname(__file__), "data", "user")
 
@@ -40,19 +35,13 @@ user_index(embeddings=embeddings_db)
 
 @cl.on_chat_start
 async def on_chat_start():
-    chain = setup_chain(
-        model="gpt-4-1106-preview",
-        temperature=0.0,
-        streaming=True,
-        embeddings_db=embeddings_db,
-        use_history=use_history,
-        max_tokens=max_tokens,
-    )
+    settings = get_chat_settings()
+    chain = setup_chain_from_chat_settings(settings.settings(), embeddings_db)
 
     cl.user_session.set("chain", chain)
     cl.user_session.set("chat_history", [])
 
-    await get_chat_settings(use_history=use_history).send()
+    await settings.send()
     await get_avatar(ceos_user).send()
 
     for message in get_initial_messages(ceos_user):
@@ -60,15 +49,10 @@ async def on_chat_start():
 
 
 @cl.on_settings_update
-async def setup_agent(settings):    
-    cl.user_session.set("chain", setup_chain(
-        model=settings["Model"],
-        temperature=settings["Temperature"],
-        streaming=settings["Streaming"],
-        embeddings_db=embeddings_db,
-        max_tokens=settings["MaxTokens"],
-        use_history=settings["UseHistory"],
-    ))
+async def setup_agent(settings):
+    cl.user_session.set(
+        "chain", setup_chain_from_chat_settings(settings, embeddings_db),
+    )
 
 
 @cl.on_message
@@ -77,7 +61,7 @@ async def on_message(message: cl.Message):
         if isinstance(element, cl.File):
             file = element
 
-            await cl.Message(content=f"Processing `{file.name}`...").send()            
+            await cl.Message(content=f"Processing `{file.name}`...").send()
             add_file_to_user_index(file.name, embeddings_db, file.content)
             await cl.Message(content="...done!").send()
             return
@@ -99,11 +83,17 @@ async def on_message(message: cl.Message):
     async for chunk in chain.astream(
         input={
             "question": message.content,
+            "input": message.content,  # Duplicate for tool chain - should be merged!
             "chat_history": chat_history,  # Used when history is enabled
+            "agent_scratchpad": [],  # Used when tools is enabled
         },
         config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
     ):
-        await msg.stream_token(chunk)
+        if chunk is str:
+            await msg.stream_token(token=chunk)
+
+        if isinstance(chunk, dict) and chunk and "output" in chunk:
+            await msg.stream_token(token=chunk["output"])
 
     # append to chat history
     chat_history += [(message.content, msg.content)]

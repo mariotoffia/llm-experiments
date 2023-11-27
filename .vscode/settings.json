@@ -2,6 +2,8 @@
   "asciidoc.antora.enableAntoraSupport": true,
   "cSpell.words": [
     "acall",
+    "aiohttp",
+    "arun",
     "astream",
     "CEOS",
     "chainlit",
@@ -20,6 +22,7 @@
     "pydantic",
     "sentencepiece",
     "setuptools",
+    "Skellefteå",
     "SMHI",
     "tiktoken",
     "vectorstores",

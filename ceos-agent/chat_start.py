@@ -2,8 +2,7 @@ from typing import List
 import chainlit as cl
 from chainlit.input_widget import Select, Switch, Slider
 
-
-def get_chat_settings(use_history=False) -> cl.ChatSettings: 
+def get_chat_settings() -> cl.ChatSettings: 
   """
   gets the chat setting.
   :returns: cl.ChatSettings
@@ -12,13 +11,20 @@ def get_chat_settings(use_history=False) -> cl.ChatSettings:
         [
             Select(
                 id="Model",
-                label="OpenAI - Model",
+                label="Model",
                 values=["gpt-3.5-turbo", "gpt-3.5-turbo-16k",
                         "gpt-4", "gpt-4-1106-preview"],
                 initial_index=3,
             ),
             Switch(id="Streaming", label="OpenAI - Stream Tokens", initial=True),
-            Switch(id="UseHistory", label="Use History", initial=use_history),
+            Switch(id="Debug", label="Verbose", initial=True),
+            Select(
+                id="Chain",
+                label="Chain Type",
+                values=["no-history", "history",
+                        "history-with-tools"],
+                initial_index=2,
+            ),
             Slider(
                 id="Temperature",
                 label="OpenAI - Temperature",

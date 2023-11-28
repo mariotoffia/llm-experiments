@@ -1,20 +1,21 @@
 import os
 from dotenv import load_dotenv
-import chainlit as cl
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.schema.runnable import Runnable, RunnableConfig
 
-from chat_start import get_chat_settings, get_avatar, get_initial_messages
+from chains.base import BaseChain
 from chain import setup_chain_from_chat_settings
 from index import system_index, user_index, add_file_to_user_index
 from embeddingsdb import EmbeddingsDb
+from chat_start import get_chat_settings, get_avatar, get_initial_messages
+
+import chainlit as cl
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.schema.runnable import RunnableConfig
 
 # Load environment variables from .env file
 load_dotenv()
 
 # Set debug level
-debug = True
-
+debug = False
 
 # Initialize System
 ceos_user = "mario.toffia@crossbreed.se"
@@ -38,8 +39,7 @@ async def on_chat_start():
     settings = get_chat_settings()
     chain = setup_chain_from_chat_settings(settings.settings(), embeddings_db)
 
-    cl.user_session.set("chain", chain)
-    cl.user_session.set("chat_history", [])
+    cl.user_session.set("chain", chain.create())
 
     await settings.send()
     await get_avatar(ceos_user).send()
@@ -51,7 +51,7 @@ async def on_chat_start():
 @cl.on_settings_update
 async def setup_agent(settings):
     cl.user_session.set(
-        "chain", setup_chain_from_chat_settings(settings, embeddings_db),
+        "chain", setup_chain_from_chat_settings(settings, embeddings_db).create(),
     )
 
 
@@ -67,7 +67,7 @@ async def on_message(message: cl.Message):
             return
 
     # Get the current chain
-    chain = cl.user_session.get("chain")  # type: Runnable
+    chain = cl.user_session.get("chain")  # type: BaseChain
 
     if chain is None:
         msg = cl.Message(content="chain is None!")
@@ -78,24 +78,17 @@ async def on_message(message: cl.Message):
     msg = cl.Message(content="", author=ceos_user)
     await msg.send()
 
-    chat_history = cl.user_session.get("chat_history")  # type: list
-
-    async for chunk in chain.astream(
-        input={
+    async for chunk in chain.chain().astream(
+        input=chain.before({
             "question": message.content,
-            "input": message.content,  # Duplicate for tool chain - should be merged!
-            "chat_history": chat_history,  # Used when history is enabled
-            "agent_scratchpad": [],  # Used when tools is enabled
-        },
+        }),
         config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
     ):
-        if chunk is str:
-            await msg.stream_token(token=chunk)
+        chunk = chain.chunk(chunk)
+        output = chain.get_output(chunk)
 
-        if isinstance(chunk, dict) and chunk and "output" in chunk:
-            await msg.stream_token(token=chunk["output"])
+        await msg.stream_token(token=output)
 
-    # append to chat history
-    chat_history += [(message.content, msg.content)]
+    chain.after(msg.content)
 
     await msg.update()
